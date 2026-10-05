@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Painel de Dashboards</title>
+<style>
+  :root {
+    --bg: #f4f6fb; --surface: #ffffff; --text: #0f172a; --muted: #64748b; --border: #e2e8f0;
+    --accent: #4f46e5; --accent-2: #06b6d4; --shadow: 0 1px 2px rgba(15,23,42,.06), 0 8px 24px rgba(15,23,42,.06);
+    --shadow-hover: 0 2px 4px rgba(15,23,42,.08), 0 18px 40px rgba(79,70,229,.20);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0b1020; --surface: #141b2f; --text: #f1f5f9; --muted: #94a3b8; --border: #243049;
+      --accent: #818cf8; --accent-2: #22d3ee; --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.3);
+      --shadow-hover: 0 2px 4px rgba(0,0,0,.5), 0 18px 40px rgba(129,140,248,.25);
+    }
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    font-family: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif; color: var(--text); background: var(--bg);
+    min-height: 100vh; position: relative; overflow-x: hidden;
+  }
+  body::before, body::after {
+    content: ""; position: fixed; width: 520px; height: 520px; border-radius: 50%; filter: blur(110px);
+    opacity: .28; z-index: 0; pointer-events: none;
+  }
+  body::before { background: var(--accent); top: -180px; left: -140px; }
+  body::after { background: var(--accent-2); bottom: -200px; right: -160px; }
+  .wrap { position: relative; z-index: 1; max-width: 1040px; margin: 0 auto; padding: 56px 16px 40px; }
+  header { text-align: center; margin-bottom: 44px; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 12%, transparent); padding: 6px 14px; border-radius: 999px; margin-bottom: 18px;
+  }
+  .badge i { width: 8px; height: 8px; border-radius: 50%; background: var(--accent-2); }
+  h1 { font-size: clamp(30px, 5vw, 46px); font-weight: 800; letter-spacing: -.02em; line-height: 1.1; }
+  h1 span { background: linear-gradient(90deg, var(--accent), var(--accent-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  header p { color: var(--muted); margin-top: 12px; font-size: 17px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+  .card {
+    display: flex; flex-direction: column; gap: 18px; padding: 24px; text-decoration: none; color: inherit;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 20px; box-shadow: var(--shadow);
+    transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease; position: relative; overflow: hidden;
+    animation: rise .5s ease both;
+  }
+  .card::before {
+    content: ""; position: absolute; inset: 0 0 auto 0; height: 4px; background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    opacity: 0; transition: opacity .2s;
+  }
+  .card:hover, .card:focus-visible { transform: translateY(-5px); box-shadow: var(--shadow-hover); border-color: var(--accent); outline: none; }
+  .card:hover::before, .card:focus-visible::before { opacity: 1; }
+  .icon {
+    width: 52px; height: 52px; border-radius: 14px; display: grid; place-items: center; color: #fff;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  }
+  .icon svg { width: 26px; height: 26px; }
+  .card h2 { font-size: 20px; font-weight: 700; letter-spacing: -.01em; }
+  .card small { color: var(--muted); font-size: 14px; }
+  .go { margin-top: auto; display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 14px; color: var(--accent); }
+  .go svg { width: 16px; transition: transform .2s; }
+  .card:hover .go svg { transform: translate(3px, -3px); }
+  .empty { grid-column: 1 / -1; text-align: center; color: var(--muted); padding: 40px 0; }
+  footer { text-align: center; color: var(--muted); font-size: 13px; margin-top: 48px; }
+  @keyframes rise { from { opacity: 0; transform: translateY(14px); } }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="badge"><i></i> Power BI</div>
+    <h1>Painel de <span>Dashboards</span></h1>
+    <p>Escolha um relatório para abrir em uma nova aba.</p>
+  </header>
+
+
+  <main class="grid" id="grid"></main>
+  <footer id="foot"></footer>
+</div>
+
+<script>
+// Para ocultar um dashboard, troque ativo para false. Para adicionar, inclua uma nova linha.
+const DASHBOARDS = [
+  { nome: "DRE", link: "https://app.powerbi.com/view?r=eyJrIjoiODE5NGFmNGEtZmE2My00ZTQ0LWI5OTctMzNjNzg1ZDM4NTIxIiwidCI6IjA3M2M4YjkwLTZiOWYtNGEyMy1iNzc5LWIyNWI1MjNlMGM1YSJ9", ativo: true },
+  { nome: "Fluxo de Caixa", link: "https://app.powerbi.com/view?r=eyJrIjoiNmQ3NTAxMDUtMzYxMi00OTc5LWI3MGYtYmYyMmE3MGFlZTAzIiwidCI6IjA3M2M4YjkwLTZiOWYtNGEyMy1iNzc5LWIyNWI1MjNlMGM1YSJ9", ativo: false },
+  { nome: "Fluxo de Caixa Novo", link: "https://app.powerbi.com/view?r=eyJrIjoiMzJiYmRhYzQtZWU2OC00YjNiLTk0NGYtOGE4OTY0NjEyMmRkIiwidCI6IjA3M2M4YjkwLTZiOWYtNGEyMy1iNzc5LWIyNWI1MjNlMGM1YSJ9", ativo: true },
+  { nome: "Vendas", link: "https://app.powerbi.com/view?r=eyJrIjoiMmM5OWM4ZWYtZGE5OS00N2ExLWFjYTYtMjBlNzcyN2E1YjMxIiwidCI6IjA3M2M4YjkwLTZiOWYtNGEyMy1iNzc5LWIyNWI1MjNlMGM1YSJ9", ativo: true }
+];
+
+const ICONS = {
+  caixa: '<path d="M3 17l5-5 4 4 8-9"/><path d="M15 7h5v5"/>',
+  dre: '<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 13h7M9 17h7"/>',
+  vendas: '<circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.7 11.4a1 1 0 0 0 1 .8h8.7a1 1 0 0 0 1-.8L20 7H6"/>',
+  padrao: '<path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/>'
+};
+function icone(nome) {
+  const n = nome.toLowerCase();
+  const k = n.includes('caixa') ? 'caixa' : n.includes('dre') ? 'dre' : n.includes('venda') ? 'vendas' : 'padrao';
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + ICONS[k] + '</svg>';
+}
+const esc = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const ativos = DASHBOARDS.filter(d => d.ativo);
+
+function render() {
+  const lista = ativos;
+  document.getElementById('grid').innerHTML = lista.length
+    ? lista.map((d, i) => `
+      <a class="card" href="${esc(d.link)}" target="_blank" rel="noopener noreferrer" style="animation-delay:${i * 70}ms">
+        <div class="icon">${icone(d.nome)}</div>
+        <div><h2>${esc(d.nome)}</h2><small>Dashboard Power BI</small></div>
+        <span class="go">Abrir dashboard
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8 7h9v9"/></svg>
+        </span>
+      </a>`).join('')
+    : '<p class="empty">Nenhum dashboard encontrado.</p>';
+}
+document.getElementById('foot').textContent = ativos.length + ' dashboards disponíveis';
+render();
+</script>
+</body>
+</html>
